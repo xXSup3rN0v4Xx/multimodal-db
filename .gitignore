@@ -59,7 +59,10 @@ __pypackages__/
 *_database/
 test_*_db/
 example_*_db/
-data/sessions/
+
+# Data Directory Contents (keep structure, ignore contents)
+data/*
+!data/.gitkeep
 
 # ============================================================================
 # Data Export & Training Files

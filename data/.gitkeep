@@ -1,0 +1,2 @@
+# This file ensures the data/ directory structure is preserved in git
+# while ignoring all data files (*.parquet, *.db, etc.)
