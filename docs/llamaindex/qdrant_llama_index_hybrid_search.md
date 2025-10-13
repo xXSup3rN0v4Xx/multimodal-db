@@ -1,6 +1,3 @@
-# TODO: Implement Qdrant hybrid search with LlamaIndex
-
-"""
 Qdrant Hybrid Search
 Qdrant supports hybrid search by combining search results from sparse and dense vectors.
 
@@ -353,4 +350,3 @@ client.recreate_collection(
 vector_store = QdrantVectorStore(
     collection_name="llama2_paper", client=client, enable_hybrid=True
 )
-"""

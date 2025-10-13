@@ -470,6 +470,22 @@ class AgentConfig:
         
         return self.from_dict(config_dict)
     
+    # Compatibility properties for simplified interface
+    @property
+    def helper_prompts(self) -> Dict[str, str]:
+        """Get helper prompts for compatibility."""
+        return self.prompts[PromptType.HELPER.value]
+    
+    @property 
+    def system_prompt(self) -> str:
+        """Get first available system prompt for compatibility."""
+        sys_prompts = self.prompts[PromptType.SYSTEM.value]
+        for model_type, models in sys_prompts.items():
+            for model_name, prompt in models.items():
+                if prompt:
+                    return prompt
+        return ""
+    
     def get_summary(self) -> Dict[str, Any]:
         """Get a summary of the agent configuration."""
         enabled_models = self.get_enabled_models()

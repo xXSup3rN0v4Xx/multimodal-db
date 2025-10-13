@@ -1,6 +1,3 @@
-# TODO: Implement Qdrant core functionality
-
-"""
 Python Qdrant Client
 Client library and SDK for the Qdrant vector search engine.
 
@@ -234,4 +231,3 @@ Development
 This project uses git hooks to run code formatters.
 
 Set up hooks with pre-commit install before making contributions.
-"""
