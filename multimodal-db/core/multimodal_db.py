@@ -133,11 +133,34 @@ class MultimodalDB:
         config_data = json.loads(config_json)
         return AgentConfig.from_dict(config_data)
     
-    def list_agents(self) -> List[Dict[str, Any]]:
-        """List all agents with summary info."""
-        return (self.agents
-                .select(["agent_id", "name", "description", "tags", "enabled_models", "created_at"])
-                .to_dicts())
+    def list_agents(self, include_full_config: bool = False) -> List[Dict[str, Any]]:
+        """
+        List all agents with summary info.
+        
+        Args:
+            include_full_config: If True, includes complete agent configuration with prompts
+        """
+        if include_full_config:
+            # Return full agent data including config_json
+            agents_list = self.agents.to_dicts()
+            # Parse config_json for each agent
+            for agent in agents_list:
+                if 'config_json' in agent and agent['config_json']:
+                    try:
+                        config_data = json.loads(agent['config_json'])
+                        # Merge full config into the agent dict
+                        agent['system_prompt'] = config_data.get('system_prompt', '')
+                        agent['helper_prompts'] = config_data.get('helper_prompts', {})
+                        agent['models'] = config_data.get('models', {})
+                        agent['media_config'] = config_data.get('media_config', {})
+                    except json.JSONDecodeError:
+                        pass
+            return agents_list
+        else:
+            # Return summary only (original behavior)
+            return (self.agents
+                    .select(["agent_id", "name", "description", "tags", "enabled_models", "created_at"])
+                    .to_dicts())
     
     def update_agent(self, agent: AgentConfig):
         """Update existing agent configuration."""

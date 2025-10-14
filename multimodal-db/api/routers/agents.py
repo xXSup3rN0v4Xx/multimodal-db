@@ -18,9 +18,14 @@ class AgentCreateRequest(BaseModel):
     tags: Optional[List[str]] = None
 
 @router.get("/")
-async def list_agents(db=Depends(get_db)):
-    """List all agents. Queries database on every request for real-time updates."""
-    return db.list_agents()
+async def list_agents(include_full: bool = False, db=Depends(get_db)):
+    """
+    List all agents. Queries database on every request for real-time updates.
+    
+    Args:
+        include_full: If True, includes complete configuration with prompts and models
+    """
+    return db.list_agents(include_full_config=include_full)
 
 @router.post("/")
 async def create_agent(request: AgentCreateRequest, db=Depends(get_db)):
