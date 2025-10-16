@@ -12,7 +12,7 @@ from datetime import datetime
 
 # Import dependencies and routers
 from .dependencies import get_db, get_vector_db
-from .routers import agents
+from .routers import agents, conversations
 
 # Import our razor-sharp components
 import sys
@@ -21,8 +21,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core import (
     AgentConfig, ModelType, MediaType,
-    create_corecoder_agent, create_multimodal_agent,
-    MultimodalDB, QdrantVectorDB, SimpleOllamaClient
+    create_corecoder_agent, create_example_agent,
+    MultimodalDB, QdrantVectorDB
 )
 
 # FastAPI app configuration
@@ -45,13 +45,14 @@ app.add_middleware(
 
 # Include routers
 app.include_router(agents.router)
+app.include_router(conversations.router)
 
 # Initialize database instances (will be created on first request via dependencies)
 db = get_db()
 vector_db = get_vector_db()
 
-# Initialize Ollama client for chat
-ollama_client = SimpleOllamaClient(model="qwen2.5-coder:3b", timeout=60)
+# Initialize Ollama client for chat (TODO: Add SimpleOllamaClient to core)
+# ollama_client = SimpleOllamaClient(model="qwen2.5-coder:3b", timeout=60)
 
 # Pydantic models for API
 class AgentCreateRequest(BaseModel):
@@ -106,16 +107,17 @@ async def list_agents():
 
 @app.post("/agents/", response_model=Dict[str, str])
 async def create_agent(request: AgentCreateRequest):
-    """Create a new agent (corecoder or multimodal)."""
+    """Create a new agent (corecoder or example)."""
     try:
         if request.agent_type == "corecoder":
-            agent = create_corecoder_agent(request.name)
-        elif request.agent_type == "multimodal":
-            agent = create_multimodal_agent(request.name)
+            agent = create_corecoder_agent()
+        elif request.agent_type == "example" or request.agent_type == "multimodal":
+            agent = create_example_agent()
         else:
-            raise HTTPException(status_code=400, detail="Invalid agent_type")
+            raise HTTPException(status_code=400, detail="Invalid agent_type. Use 'corecoder' or 'example'")
         
         # Override with custom values if provided
+        agent.name = request.name
         if request.description:
             agent.description = request.description
         if request.tags:
@@ -282,153 +284,29 @@ async def list_collections():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# === REAL-TIME CHAT ENDPOINTS ===
+# === REAL-TIME CHAT ENDPOINTS (TODO: Implement with proper Ollama client) ===
 
 @app.get("/chat/status")
 async def chat_status():
-    """Check Ollama availability and model status."""
+    """Check chat availability status."""
     return {
-        "ollama_available": ollama_client.available,
-        "model": ollama_client.model,
-        "timeout": ollama_client.timeout,
-        "status": "ready" if ollama_client.available else "unavailable",
-        "message": "Ollama is ready for chat" if ollama_client.available else "Please install and start Ollama with model 'qwen2.5-coder:3b'"
+        "status": "not_implemented",
+        "message": "Chat endpoints are not yet implemented. Use chatbot-python-core API for chat functionality."
     }
 
-@app.websocket("/chat/ws/{agent_id}")
-async def websocket_chat(websocket: WebSocket, agent_id: str):
-    """WebSocket endpoint for real-time chat with agents using Ollama."""
-    await websocket.accept()
-    
-    # Verify agent exists
-    agent = db.get_agent(agent_id)
-    if not agent:
-        await websocket.send_json({"error": "Agent not found"})
-        await websocket.close()
-        return
-    
-    # Send initial connection message
-    await websocket.send_json({
-        "type": "connection",
-        "agent_id": agent_id,
-        "agent_name": agent.agent_name,
-        "ollama_available": ollama_client.available,
-        "message": f"Connected to {agent.agent_name}"
-    })
-    
-    try:
-        while True:
-            # Receive message from client
-            data = await websocket.receive_json()
-            message = data.get("message", "")
-            
-            if not message:
-                continue
-            
-            # Store user message
-            db.add_message(agent_id, "user", message)
-            
-            # Build AI response with Ollama
-            system_prompt = agent.system_prompt if agent.system_prompt else f"You are {agent.agent_name}."
-            
-            # Add helper prompts if available
-            if agent.helper_prompts:
-                helper_context = "\n".join([f"{name}: {prompt}" for name, prompt in agent.helper_prompts.items()])
-                system_prompt += f"\n\n{helper_context}"
-            
-            # Generate response
-            if ollama_client.available:
-                result = ollama_client.generate(prompt=message, system_prompt=system_prompt)
-                ai_response = result["content"] if result["success"] else f"Error: {result['content']}"
-                status = "success" if result["success"] else "error"
-            else:
-                ai_response = "⚠️ Ollama not available"
-                status = "ollama_unavailable"
-            
-            # Store AI response
-            db.add_message(agent_id, "assistant", ai_response)
-            
-            # Send response back to client
-            await websocket.send_json({
-                "type": "message",
-                "agent_id": agent_id,
-                "agent_name": agent.agent_name,
-                "message": ai_response,
-                "status": status,
-                "timestamp": datetime.now().isoformat()
-            })
-            
-    except Exception as e:
-        await websocket.send_json({"type": "error", "error": str(e)})
-    finally:
-        await websocket.close()
+# Commented out until SimpleOllamaClient is added to core
+# These endpoints require the SimpleOllamaClient class which is not yet implemented
+# For chat functionality, use the chatbot-python-core API at http://localhost:8000
 
-@app.post("/chat/message")
-async def send_message(request: ChatMessage):
-    """Send message to agent with real Ollama AI response."""
-    try:
-        # Verify agent exists
-        agent = db.get_agent(request.agent_id)
-        if not agent:
-            raise HTTPException(status_code=404, detail="Agent not found")
-        
-        # Store user message
-        db.add_message(request.agent_id, "user", request.message)
-        
-        # Build context from agent configuration
-        system_prompt = agent.system_prompt if agent.system_prompt else f"You are {agent.agent_name}, a helpful AI assistant."
-        
-        # Add helper prompts to context if available
-        if agent.helper_prompts:
-            helper_context = "\n\n".join([f"{name}: {prompt}" for name, prompt in agent.helper_prompts.items()])
-            system_prompt = f"{system_prompt}\n\nAdditional Context:\n{helper_context}"
-        
-        # Get recent conversation history for context (last 5 messages)
-        try:
-            history = db.get_messages(request.agent_id, limit=10)  # Get last 10 messages (5 pairs)
-            if history and len(history) > 2:
-                # Format recent history (excluding current message)
-                recent_history = history[-10:-1] if len(history) > 1 else []
-                if recent_history:
-                    history_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in recent_history[-6:]])
-                    conversation_context = f"\n\nRecent conversation:\n{history_text}"
-                    system_prompt += conversation_context
-        except:
-            pass  # Continue without history if not available
-        
-        # Generate AI response with Ollama
-        if ollama_client.available:
-            result = ollama_client.generate(
-                prompt=request.message,
-                system_prompt=system_prompt
-            )
-            
-            if result["success"]:
-                ai_response = result["content"]
-                status = "success"
-            else:
-                ai_response = f"⚠️ Ollama error: {result['content']}"
-                status = "error"
-        else:
-            ai_response = "⚠️ Ollama is not available. Please ensure Ollama is installed and running with model 'qwen2.5-coder:3b'."
-            status = "ollama_unavailable"
-        
-        # Store AI response
-        db.add_message(request.agent_id, "assistant", ai_response)
-        
-        return {
-            "agent_id": request.agent_id,
-            "agent_name": agent.agent_name,
-            "user_message": request.message,
-            "ai_response": ai_response,
-            "status": status,
-            "ollama_available": ollama_client.available,
-            "timestamp": datetime.now().isoformat()
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.websocket("/chat/ws/{agent_id}")
+# async def websocket_chat(websocket: WebSocket, agent_id: str):
+#     """WebSocket endpoint for real-time chat with agents using Ollama."""
+#     ...
+
+# @app.post("/chat/message")
+# async def send_message(request: ChatMessage):
+#     """Send message to agent with real Ollama AI response."""
+#     ...
 
 # === SYSTEM ADMINISTRATION ===
 

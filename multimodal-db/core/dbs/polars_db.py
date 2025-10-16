@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 from pathlib import Path
 
-from .base_agent_config import AgentConfig
+from ..agent_configs.base_agent_config import AgentConfig
 
 
 class PolarsDB:
@@ -114,6 +114,11 @@ class PolarsDB:
                    .select(["role", "content", "timestamp"]))
         
         return messages.to_dicts()
+    
+    def clear_messages(self, agent_id: str):
+        """Clear all messages for an agent."""
+        self.conversations = self.conversations.filter(pl.col("agent_id") != agent_id)
+        self.save()
     
     def list_agents(self) -> list:
         """List all agents."""

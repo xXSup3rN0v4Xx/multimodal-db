@@ -5,6 +5,14 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List, Union
 from enum import Enum
 
+class MediaType(Enum):
+    """Enumeration of supported media types."""
+    TEXT = "text"
+    AUDIO = "audio"
+    IMAGE = "image"
+    VIDEO = "video"
+    DOCUMENT = "document"
+    EMBEDDING = "embedding"
 
 class ModelType(Enum):
     """Enumeration of supported model types."""
@@ -18,7 +26,6 @@ class ModelType(Enum):
     IMAGE_GENERATION = "image_generation"
     VIDEO_GENERATION = "video_generation"
 
-
 class PromptType(Enum):
     """Types of prompts based on model capabilities."""
     SYSTEM = "system"  # Only for LLMs and Vision LLMs
@@ -29,7 +36,6 @@ class PromptType(Enum):
     USER_FILES = "user_files"  # File handling templates
     USER_IMAGES = "user_images"  # Image handling templates
 
-
 class DatabaseCategory(Enum):
     """Core database categories for agent storage."""
     AGENT_CONFIGS = "agent_configurations"
@@ -39,7 +45,6 @@ class DatabaseCategory(Enum):
     TEMPLATES = "template_collections"
     USER_DATA = "user_personal_data"
     ALIGNMENT_DOCS = "agentic_alignment_documents"
-
 
 class ResearchCategory(Enum):
     """Research domain categories."""
@@ -58,7 +63,6 @@ class ResearchCategory(Enum):
     HEALTH_MEDICINE = "health_medicine"
     EDUCATION = "education"
     CUSTOM = "custom"
-
 
 class AgentConfig:
     """

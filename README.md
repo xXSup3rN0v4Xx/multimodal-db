@@ -92,6 +92,41 @@ Launch the interactive web interface:
 python examples/enhanced_gradio_ui.py
 ```
 
+## Integration with Chatbot-Python-Core
+
+🔥 **NEW!** Multimodal-DB now integrates seamlessly with [Chatbot-Python-Core](https://github.com/xXSup3rN0v4Xx/chatbot-python-core)!
+
+**Chatbot-Python-Core** provides AI model execution (Ollama, YOLO, Whisper, Kokoro, SDXL), while **Multimodal-DB** provides storage, querying, and analytics. Together, they form a **complete AI application platform**.
+
+### Quick Integration Example
+
+```python
+import requests
+
+# 1. Chat with AI (Chatbot-Python-Core)
+response = requests.post("http://localhost:8000/api/v1/ollama/chat", json={
+    "model": "llama3.2",
+    "messages": [{"role": "user", "content": "Hello!"}]
+})
+
+# 2. Store conversation (Multimodal-DB)
+requests.post("http://localhost:8001/api/v1/conversations/message", json={
+    "agent_id": "agent-123",
+    "role": "user",
+    "content": "Hello!"
+})
+```
+
+### Integration Documentation
+
+- **[🚀 Quick Reference](docs/QUICK_REFERENCE.md)** - Fast lookup for commands and APIs
+- **[📖 How It Works Together](docs/HOW_IT_WORKS_TOGETHER.md)** - Complete integration guide with examples
+- **[🎨 Architecture Diagrams](docs/ARCHITECTURE_DIAGRAMS.md)** - Visual representations of integration patterns
+- **[🔍 Integration Analysis](docs/INTEGRATION_ANALYSIS.md)** - Technical specifications and compatibility
+- **[📊 Integration Summary](docs/INTEGRATION_SUMMARY.md)** - Implementation roadmap and status
+
+**Start here:** [docs/README.md](docs/README.md) - Choose the right document for your needs!
+
 ## Documentation
 
 - **[Library Usage](docs/LIBRARY.md)** - Core components and Python API

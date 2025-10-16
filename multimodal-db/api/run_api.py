@@ -17,13 +17,13 @@ if __name__ == "__main__":
         from api.main import app
         
         print("🗾 Starting Multimodal-DB Unified API...")
-        print("📍 API Documentation: http://localhost:8000/docs")
+        print("📍 API Documentation: http://localhost:8001/docs")
         print("🚀 Ready for chatbot-python-core and chatbot-nextjs-webui integration!")
         
         uvicorn.run(
             "api.main:app",  # Use string import path for reload to work
             host="0.0.0.0",
-            port=8000,
+            port=8001,
             reload=True,
             log_level="info"
         )

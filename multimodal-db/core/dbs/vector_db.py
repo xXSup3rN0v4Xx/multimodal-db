@@ -20,9 +20,15 @@ except ImportError:
         EUCLID = "Euclid"
 
 try:
-    from .agent_config import MediaType
+    from ..agent_configs.base_agent_config import MediaType
 except ImportError:
-    from agent_config import MediaType
+    try:
+        from core.agent_configs.base_agent_config import MediaType
+    except ImportError:
+        # Fallback for standalone usage
+        import sys
+        sys.path.append(str(Path(__file__).parent.parent))
+        from agent_configs.base_agent_config import MediaType
 
 
 class QdrantVectorDB:

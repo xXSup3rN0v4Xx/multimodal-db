@@ -1,32 +1,60 @@
 """
-Razor-Sharp Multimodal-DB Core
-Optimized components for high-performance multimodal database operations.
+Multimodal-DB Core
+Central module for all database operations, configurations, and tools.
 """
 
-# Core optimized components  
-from .agent_config import AgentConfig, ModelType, MediaType, create_corecoder_agent, create_multimodal_agent
-from .multimodal_db import MultimodalDB
-from .vector_db import QdrantVectorDB
+# Agent configurations
+from .agent_configs.base_agent_config import (
+    AgentConfig,
+    MediaType,
+    ModelType,
+    PromptType,
+    DatabaseCategory,
+    ResearchCategory,
+    create_corecoder_agent,
+    create_example_agent
+)
 
-# Legacy components (maintained for compatibility)
-from .base_agent_config import AgentConfig as LegacyAgentConfig
-from .polars_db import PolarsDB
-from .qdrant_db import QdrantDB
-from .simple_ollama import SimpleOllamaClient
+# Database implementations
+from .dbs import (
+    PolarsDB,
+    QdrantDB,
+    QdrantVectorDB,
+    MultimodalDB,
+    GraphitiDB,
+    GraphitiDBSync
+)
+
+# Database tools
+from .db_tools import (
+    ParquetExporter,
+    PandasNLQueryEngine,
+    PolarsNLQueryEngine,
+    QdrantHybridSearch
+)
 
 __all__ = [
-    # Core razor-sharp components
-    "AgentConfig", 
+    # Agent configurations
+    "AgentConfig",
+    "MediaType",
     "ModelType",
-    "MediaType", 
+    "PromptType",
+    "DatabaseCategory",
+    "ResearchCategory",
     "create_corecoder_agent",
-    "create_multimodal_agent",
-    "MultimodalDB",
-    "QdrantVectorDB",
+    "create_example_agent",
     
-    # Legacy components
-    "LegacyAgentConfig",
+    # Databases
     "PolarsDB",
     "QdrantDB",
-    "SimpleOllamaClient"
+    "QdrantVectorDB",
+    "MultimodalDB",
+    "GraphitiDB",
+    "GraphitiDBSync",
+    
+    # Tools
+    "ParquetExporter",
+    "PandasNLQueryEngine",
+    "PolarsNLQueryEngine",
+    "QdrantHybridSearch",
 ]

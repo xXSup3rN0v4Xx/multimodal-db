@@ -12,9 +12,15 @@ import hashlib
 import base64
 
 try:
-    from .agent_config import MediaType, AgentConfig
+    from ..agent_configs.base_agent_config import MediaType, AgentConfig
 except ImportError:
-    from agent_config import MediaType, AgentConfig
+    try:
+        from core.agent_configs.base_agent_config import MediaType, AgentConfig
+    except ImportError:
+        # Fallback for standalone usage
+        import sys
+        sys.path.append(str(Path(__file__).parent.parent))
+        from agent_configs.base_agent_config import MediaType, AgentConfig
 
 
 class MultimodalDB:
@@ -270,6 +276,21 @@ class MultimodalDB:
                    .select(["role", "content", "media_type", "media_refs", "timestamp", "metadata"]))
         
         return messages.to_dicts()
+    
+    def get_messages(self, agent_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """Get messages for agent (all sessions). Compatible with PolarsDB interface."""
+        messages = (self.conversations
+                   .filter(pl.col("agent_id") == agent_id)
+                   .sort("timestamp", descending=True)
+                   .limit(limit)
+                   .select(["id", "role", "content", "timestamp"]))
+        
+        return messages.to_dicts()
+    
+    def clear_messages(self, agent_id: str):
+        """Clear all messages for an agent."""
+        self.conversations = self.conversations.filter(pl.col("agent_id") != agent_id)
+        self.save()
     
     # Media Operations
     def store_media(self, media_data: bytes, media_type: MediaType, 
