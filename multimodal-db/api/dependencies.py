@@ -26,6 +26,10 @@ def get_db():
         project_root = Path(__file__).parent.parent.parent
         data_path = project_root / "data" / "multimodal_db"
         _db = MultimodalDB(db_path=str(data_path))
+        
+        # Clean up any duplicate agents on startup
+        print("Checking for duplicate agents...")
+        _db.deduplicate_agents()
     return _db
 
 @lru_cache()

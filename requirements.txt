@@ -8,6 +8,9 @@ pyarrow>=10.0.0
 # Vector Database (Recommended)
 qdrant-client>=1.7.0
 
+# Ai agents and LLMs (Optional)
+llama-index-experimental>=0.6.3
+
 # API Backend (Required for API)
 fastapi>=0.100.0
 uvicorn[standard]>=0.20.0

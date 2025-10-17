@@ -436,6 +436,33 @@ class PolarsNLQueryEngine:
                 "error": str(e)
             }
     
+    def get_prompts(self, df: pl.DataFrame) -> Optional[Dict[str, Any]]:
+        """
+        Get the current prompts used by the query engine.
+        
+        Args:
+            df: Polars DataFrame to create temporary engine
+        
+        Returns:
+            Dictionary of prompt templates
+        """
+        if not self.available:
+            return None
+        
+        try:
+            engine = self.create_query_engine(df)
+            if engine is None:
+                return None
+            
+            prompts = engine.get_prompts()
+            return {
+                name: {"template": prompt.template if hasattr(prompt, 'template') else str(prompt)}
+                for name, prompt in prompts.items()
+            }
+        except Exception as e:
+            print(f"Error getting prompts: {e}")
+            return None
+    
     def custom_prompt_query(self,
                           df: pl.DataFrame,
                           query: str,

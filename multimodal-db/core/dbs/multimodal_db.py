@@ -135,6 +135,11 @@ class MultimodalDB:
         if agent_data.height == 0:
             return None
         
+        # Handle duplicate entries - take the most recent one
+        if agent_data.height > 1:
+            print(f"Warning: Found {agent_data.height} entries for agent {agent_id}, using most recent")
+            agent_data = agent_data.sort("updated_at", descending=True).head(1)
+        
         config_json = agent_data.select("config_json").item()
         config_data = json.loads(config_json)
         return AgentConfig.from_dict(config_data)
@@ -146,9 +151,15 @@ class MultimodalDB:
         Args:
             include_full_config: If True, includes complete agent configuration with prompts
         """
+        # Remove duplicates by keeping the most recent entry for each agent_id
+        unique_agents = (self.agents
+                        .sort("updated_at", descending=True)
+                        .group_by("agent_id")
+                        .agg(pl.all().first()))
+        
         if include_full_config:
             # Return full agent data including config_json
-            agents_list = self.agents.to_dicts()
+            agents_list = unique_agents.to_dicts()
             # Parse config_json for each agent
             for agent in agents_list:
                 if 'config_json' in agent and agent['config_json']:
@@ -164,7 +175,7 @@ class MultimodalDB:
             return agents_list
         else:
             # Return summary only (original behavior)
-            return (self.agents
+            return (unique_agents
                     .select(["agent_id", "name", "description", "tags", "enabled_models", "created_at"])
                     .to_dicts())
     
@@ -201,8 +212,26 @@ class MultimodalDB:
         return True
     
     def store_agent(self, agent: AgentConfig) -> str:
-        """Alias for add_agent for compatibility."""
+        """Store or update agent configuration."""
+        # Check if agent already exists
+        existing = self.agents.filter(pl.col("agent_id") == agent.agent_id)
+        
+        if existing.height > 0:
+            # Update existing agent - remove old entries and add new one
+            self.agents = self.agents.filter(pl.col("agent_id") != agent.agent_id)
+        
+        # Add the agent
         return self.add_agent(agent)
+    
+    def deduplicate_agents(self):
+        """Remove duplicate agent entries, keeping the most recent version of each."""
+        # Group by agent_id and keep only the most recent entry
+        self.agents = (self.agents
+                      .sort("updated_at", descending=True)
+                      .group_by("agent_id")
+                      .agg(pl.all().first()))
+        self.save()
+        print("Agent duplicates removed")
     
     def store_content(self, agent_id: str, content: str, media_type: MediaType,
                      metadata: Dict[str, Any] = None) -> str:

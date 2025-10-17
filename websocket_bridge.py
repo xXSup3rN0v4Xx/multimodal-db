@@ -135,8 +135,27 @@ async def websocket_endpoint(websocket: WebSocket, agent_id: str):
             
             print(f"Received {message_type} from {agent_id}: {str(content)[:100]}")
             
+            # Reload agent config on each message to get latest settings
+            try:
+                async with httpx.AsyncClient(timeout=5.0) as client:
+                    agent_response = await client.get(f"{MULTIMODAL_DB_API}/agents/{agent_id}")
+                    if agent_response.status_code == 200:
+                        agent_config = agent_response.json()
+                        print(f"Agent config refreshed: {agent_config.get('agent_id')}")
+            except Exception as e:
+                print(f"Warning: Could not refresh agent config: {e}")
+                # Continue with existing config
+            
             if message_type == "chat_message":
                 await handle_chat_message(agent_id, content, agent_config)
+            
+            elif message_type == "refresh_config":
+                # Config is already refreshed above, just confirm
+                model_name = agent_config.get("models", {}).get("large_language_model", {}).get("ollama", {}).get("instances", [{}])[0].get("model", "unknown")
+                await manager.send_message(agent_id, {
+                    "type": "config_refreshed",
+                    "content": f"Configuration refreshed. Current model: {model_name}"
+                })
             
             elif message_type == "command":
                 await handle_command(agent_id, content)
